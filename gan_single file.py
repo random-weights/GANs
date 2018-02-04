@@ -105,11 +105,16 @@ def train(x_data,z_data):
         train_data.get_rand_batch(32)
         x_batch = train_data.x_batch
         noise = np.random.normal(loc = 0.0,scale = 0.02,size = [16,4,4,4])
+
         feed_dict_gen = {z_data:noise}
         feed_dict_disc = {x_data: x_batch,z_data: noise}
-        _,dloss = sess.run([train_disc,loss_discriminator],feed_dict_disc)
-        _,gloss = sess.run([train_gen,loss_generator],feed_dict_gen)
-        print("Epoch: ",str(epoch),"\tDisc loss = ",dloss,"\tGen loss: ",gloss)
+        dloss = sess.run(loss_discriminator, feed_dict_disc)
+        gloss = sess.run(loss_generator, feed_dict_gen)
+        print("Epoch: ", str(epoch), "\tDisc loss = ", dloss, "\tGen loss: ", gloss)
+        while dloss < 1.1*gloss:
+            sess.run(train_gen,feed_dict_gen)
+            gloss = sess.run(loss_generator, feed_dict_gen)
+        sess.run(train_disc,feed_dict_disc)
 
     sample_noise = np.random.normal(loc = 0.0, size = [1,4,4,4],scale=0.01)
     img = sess.run(gen_images,feed_dict={z_data: sample_noise})
