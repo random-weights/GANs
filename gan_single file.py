@@ -74,7 +74,7 @@ def discriminator(img_batch,reuse = False):
 #generator goal is to produce realistic data
 #   so it should force discriminator to produce 0 for all images it generates
 
-epochs = 500
+epochs = 100
 
 def train(x_data,z_data):
     gen_images = generator(z_data)
@@ -92,6 +92,7 @@ def train(x_data,z_data):
     train_disc = tf.train.AdamOptimizer(1e-3).minimize(loss_discriminator,var_list=var_disc)
     train_gen = tf.train.AdamOptimizer(1e-3).minimize(loss_generator,var_list=var_gen)
 
+    saver = tf.train.Saver(max_to_keep=10)
 
     train_data = Data()
     train_data.get_xdata("data/x_train.csv")
@@ -114,21 +115,17 @@ def train(x_data,z_data):
         while dloss < 1.1*gloss:
             sess.run(train_gen,feed_dict_gen)
             gloss = sess.run(loss_generator, feed_dict_gen)
-        sess.run(train_disc,feed_dict_disc)
 
+        sess.run(train_disc,feed_dict_disc)
+        if epoch%10 == 0:
+            saver.save(sess, save_path="checkpoint/epochs",global_step=epoch)
+            
     sample_noise = np.random.normal(loc = 0.0, size = [1,4,4,4],scale=0.01)
     img = sess.run(gen_images,feed_dict={z_data: sample_noise})
     img = img.reshape(28,28)
     plt.imshow(img,cmap = "binary")
     plt.show()
-
     sess.close()
 
+
 train(x_data,z_data)
-
-
-
-
-
-
-
