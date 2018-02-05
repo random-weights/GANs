@@ -51,11 +51,14 @@ def discriminator(img_batch,reuse = False):
                               trainable=True, name="d_layer2")
         layer2_pool = tf.layers.max_pooling2d(layer2, [2, 2], strides=[1, 1], padding='same')
         flat_tensor = tf.layers.flatten(layer2_pool)
-        fc1 = tf.layers.dense(flat_tensor, 32, activation=tf.nn.relu,
+        flat_tensor = tf.contrib.layers.batch_norm(inputs = flat_tensor,center = True,scale = True, is_training = True,name = "flat_tensor_bn")
+        fc1 = tf.layers.dense(flat_tensor, 32, activation=None,
                           use_bias=True,
                           kernel_initializer=kern_init,
                           bias_initializer=bias_init,
                           trainable=True, name="d_fc1")
+        fc1 = tf.contrib.layers.batch_norm(inputs = fc1,center = True, scale = True, is_training = True, name = "fc1_bn")
+        fc1 = tf.nn.relu(fc1)
         output = tf.layers.dense(fc1, 1, activation=None,
                              use_bias=True,
                              kernel_initializer=kern_init,
@@ -74,7 +77,7 @@ def discriminator(img_batch,reuse = False):
 #generator goal is to produce realistic data
 #   so it should force discriminator to produce 0 for all images it generates
 
-epochs = 100
+epochs = 3000
 
 def train(x_data,z_data):
     gen_images = generator(z_data)
@@ -117,9 +120,9 @@ def train(x_data,z_data):
             gloss = sess.run(loss_generator, feed_dict_gen)
 
         sess.run(train_disc,feed_dict_disc)
-        if epoch%10 == 0:
+        if (epoch+1)%500 == 0:
             saver.save(sess, save_path="checkpoint/epochs",global_step=epoch)
-            
+            print("-----------------------saved checkpoint------------------------------------")
     sample_noise = np.random.normal(loc = 0.0, size = [1,4,4,4],scale=0.01)
     img = sess.run(gen_images,feed_dict={z_data: sample_noise})
     img = img.reshape(28,28)
